@@ -1,35 +1,38 @@
-version: '3'
+version: '3' # Цільова версія docker
 
 networks:
   proxy:
-    external: true
+    external: true # Мережа із доступом ззовні
   internal:
-    external: false
+    external: false # Мережа внутрішнього користування
 
 services:
 
+  # Декілька серверів на одному порті. Допомагає тримати development та production окремо на одному сервері. Конфігурація для версії 2
   proxy:
     container_name: proxy
     image: traefik:latest
     command:
       --api
+    # Перенаправимо всі запити з портів 80(HTTP), 443(HTTPS) на контейнер із Traefik
     ports:
       - 80:80
       - 443:443
     networks:
       - proxy
       - internal
+    # Ці директорії будуть доступні програмі, вони прорвуть ізоляцію
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik/traefik.yml:/traefik.yml"
       - "./traefik/config:/config"
       - "./traefik/data:/data"
     environment:
-      - "CF_API_EMAIL="
-      - "CF_API_KEY="
+      - "CF_API_EMAIL=ТУТ_ПОШТА_ВІД_CLOUDFLARE"
+      - "CF_API_KEY=ТУТ_КЛЮЧ_API_ВІД_CLOUDFLARE"
     labels:
       - "traefik.enable=false"
-    restart: always
+    restart: always # Якщо впав - піднімайся
 
   web-d:
     container_name: webD
@@ -38,7 +41,7 @@ services:
       context: ./
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dev-site0.rule=Host(`vote.pnit.od.ua`)"
+      - "traefik.http.routers.dev-site0.rule=Host(`domain.com`)"
     networks:
       - internal
     volumes:
@@ -63,6 +66,7 @@ services:
       - "./php/sessions:/var/sessions"
     restart: always
 
+  #Краще мати БД на окремому сервері, але для малих проєктів підійде
   mysql:
     container_name: db
     image: mysql:8
@@ -74,7 +78,7 @@ services:
       - "./mysql:/var/lib/mysql"
       - "./mysql/config:/etc/mysql/conf.d"
     environment:
-      MYSQL_ROOT_PASSWORD: defaultPass
+      MYSQL_ROOT_PASSWORD: ТУТ_ГОЛОВНИЙ_ПАРОЛЬ_БД
     command:
       --default-authentication-plugin=mysql_native_password
     restart: always
