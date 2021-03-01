@@ -75,7 +75,7 @@ services:
     networks:
       - internal
     volumes:
-      - "./mysql:/var/lib/mysql"
+      - "./mysql/data:/var/lib/mysql"
       - "./mysql/config:/etc/mysql/conf.d"
     environment:
       MYSQL_ROOT_PASSWORD: ТУТ_ГОЛОВНИЙ_ПАРОЛЬ_БД
