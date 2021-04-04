@@ -122,7 +122,7 @@ CREATE TABLE `Users` (
 --
 
 INSERT INTO `Users` (`id`, `chat`, `person`, `guid`, `service`, `message`, `input`) VALUES
-(1, 9111, 'Some user', NULL, NULL, NULL, NULL),;
+(1, 9111, 'Some user', NULL, NULL, NULL, NULL);
 
 --
 -- Індекси збережених таблиць
