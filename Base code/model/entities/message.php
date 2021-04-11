@@ -20,13 +20,12 @@ class Message
 		$result = [];
 		$db = self::getDB();
 		$messages = $db -> select(['Messages' => []]);
-
-		foreach (['id', 'entrypoint', 'parent'] as $var)
+		$filters = [];
+		foreach (['id', 'entrypoint', 'parent', 'service'] as $var)
 			if ($$var)
 				$filters[$var] = $$var;
 		if(!empty($filters))
 			$messages->where(['Messages'=> $filters]);
-
 		foreach ($messages->many($limit) as $message) {
 			$class = __CLASS__;
 			$result[] = new $class($message['id'], $message['parent'], $message['type'], $message['guid'],
@@ -54,17 +53,18 @@ class Message
 		foreach ( $this->getChildren() as $button) {
 			$entrypoint = '';
 			if ($button->entrypoint) {
-				$entrypoint = $button->entrypoint;
+				$entrypoint = (! is_string($button->entrypoint))
+					? $button->entrypoint
+					: 0;
 				$back = [['text' => '◀️ Попереднє меню', 'callback_data' => '9']];
 			}
 
 			if ($button->title)
-			$buttons[] = ['text' => $button->title, 'callback_data' => json_encode([
-				'id' => $button->id,
-				'type' => $button->type,
-				'entry' => $button->entrypoint ? $button->entrypoint : $entrypoint,
-				'reload' => $button->reload
-			])];
+				$buttons[] = ['text' => $button->title, 'callback_data' => json_encode([
+					'id' => $button->id,
+					'type' => $button->type,
+					'reload' => $button->reload
+				])];
 		}
 
 		return $buttons ? ($back ? [$buttons, $back] : [$buttons]) : [];

@@ -9,27 +9,31 @@ namespace Model\Services;
 class Telegram
 {
 	use \Library\Shared;
+	use \Library\Uniroad;
 
 	private ?Int $chat;
+	private Int $reload = 0;
 
-	public function send(String $text, Int $chat = 0, Array $keyboard = [], Int $reload = 0) {
+	public function send(String $text, Int $chat = 0, Array $keyboard = [], Int $reload = 0, Bool $inline = true) {
+		if ($reload)
+			$this->reload = $reload;
 		if (!$chat)
 			$chat = $this->chat;
 		$method = 'sendMessage';
 		$reply = '';
 		if (!empty($keyboard)) {
 			$reply = '&reply_markup=';
-			$reply .= json_encode( [
-				'inline_keyboard' => $keyboard,
+			$reply .= json_encode([
+				$inline ? 'inline_keyboard' : 'keyboard' => $keyboard,
 				'one_time_keyboard' => true,
-				'resize_keyboard' => false
-			] );
+				'resize_keyboard' => true
+			]);
 		}
-		if ( $reload ) {
+		if ($this->reload) {
 			$method = 'editMessageText';
 		}
 		$text = urlencode($text);
-		file_get_contents("https://api.telegram.org/bot{$this->key}/$method?parse_mode=markdown&chat_id=$chat&text=$text" . ($reload ? "&message_id=$reload" : '') . $reply );
+		file_get_contents("https://api.telegram.org/bot{$this->key}/$method?parse_mode=markdown&chat_id=$chat&text=$text" . ($this->reload ? "&message_id={$this->reload}" : '') . $reply );
 	}
 
 	public function alert(String $body = '') {
@@ -91,38 +95,96 @@ class Telegram
 		return $response;
 	}
 
-	public function process(Array $entrypoint, String $terminal = '', Bool $edited = false) {
-		if (!isset($this->chat))
-			$this->setChat($entrypoint['chat']['id']);
-
-		$db = $this->db;
-		$response = '';
-
-		$user = \Model\Entities\User::search(chat: $this->chat, limit: 1);
-
-		if (!$user) {
-			$user = new \Model\Entities\User(chat: $this->chat);
-			$user->save();
-		}
-
-		$text = $entrypoint['text'];
+	private function callbackMessage(\stdClass $sentence, \Model\Entities\User $user):void {
+		$inline = true;
 		$keyboard = [];
-		$reload = 0;
-		$type = 0;
+		$recipient = $sentence->to == $user->guid
+			? $user
+			: \Model\Entities\User::search(guid: $sentence->to, limit: 1);
 
-		if ($terminal) {
-			$command = json_decode($terminal, true);
-			$entry = $command['entry'];
-			$type = $command['type'];
-			if ($command['reload']) {
-				$reload = $entrypoint['message_id'];
+		if (property_exists($sentence, 'keyboard')) {
+			if (property_exists($sentence->keyboard, 'inline'))
+				$inline = $sentence->keyboard->inline;
+			foreach ($sentence->keyboard->buttons as $row) {
+				$keys = [];
+				foreach ($row as $button) {
+					$key = [
+						'text' => $button->title,
+						'callback_data' => json_encode([
+							'id' => $button->id,
+							'type' => 1,
+							'reload' => property_exists($button, 'reload')
+						])
+					];
+					if (property_exists($button, 'request'))
+						$key["request_{$button->request}"] = true;
+
+					$keys[] = $key;
+				}
+				$keyboard[] = $keys;
 			}
-
 		}
+		if ($recipient)
+			$this->send($sentence->value, chat: $recipient->chat, keyboard: $keyboard, inline: $inline);
+	}
 
+	private function callbackContext(\stdClass $sentence, \Model\Entities\User $user):void {
+		$user->set(['service' => $sentence->set]);
+		$this->send('Контекст змінено', chat: $user->chat);
+	}
+
+	private function workout(\Model\Entities\User $user, String $text = '', ?Int $code = null, Int $phone = 0):void {
+		$this->reload = 0;
+
+		if ($user->service) {
+			if ($code) {
+				$config = [
+					'type' => 'click',
+					'code' => $code
+				];
+			} else
+				if ($phone) {
+					$config = [
+						'type' => 'contact',
+						'value' => $phone
+					];
+				} else {
+					$config = [
+						'type' => 'message',
+						'value' => $text,
+						'from' => $user->guid
+					];
+				}
+
+			$answer = $this->uni()->get($user->service, $config)->one();
+
+			if ($this->uni()->state)
+				throw new \Exception("Service {$user->service} returned state " . $this->uni()->state, 10);
+
+			if ($answer && property_exists($answer, 'callback')) {
+				foreach ($answer->callback as $sentence) {
+					if (property_exists($sentence, 'type'))
+						if (method_exists($this, "callback{$sentence->type}")) {
+							$method = [$this, "callback{$sentence->type}"];
+							$method($sentence, $user);
+						}
+				}
+			}
+		}
+	}
+
+	private function local(Int $type, \Model\Entities\User $user, String $text, ?Int $code):void {
+		$response = '';
 		switch ($type) {
+			case 4: // Встановлюється сервіс
+				$message = \Model\Entities\Message::search(id: $code, limit: 1);
+				$user->set([
+					'service' => $message->service
+				]);
+				$response = $this->workout($user, '/start');
+				break;
 			case 2: // Вводиться форма
-				$message = \Model\Entities\Message::search(id: $command['id'], limit: 1);
+				$message = \Model\Entities\Message::search(id: $code, limit: 1);
 				if ($entrypoint) {
 					$user->set([
 						'message' => $message->id,
@@ -136,19 +198,67 @@ class Telegram
 				if ($user->message)
 					$response = $this->getContext($user, $text);
 				else {
-					$message = \Model\Entities\Message::search(entrypoint: isset($entry) ? $entry : $text, limit: 1);
+					$message = ($type == 1)
+						? \Model\Entities\Message::search(id: $code, limit: 1)
+						: \Model\Entities\Message::search(entrypoint: isset($code) ? $code : $text, limit: 1);
+
 					if ($message) {
 						$response = ($message->title ? '*' . $message->title . "*\n\n" : '') . $message->text;
 						$keyboard = $message->getKeyboard();
+
 					} else {
 						$response = $this->getReply('unknown');
 					}
 				}
 		}
 		if ($response)
-			$this->send($response, keyboard: $keyboard, reload: $reload);
+			$this->send($response, keyboard: $keyboard);
+	}
 
-		return [];
+	public function process(Array $entrypoint, String $terminal = '', Bool $edited = false):void {
+		if (!isset($this->chat))
+			$this->setChat($entrypoint['chat']['id']);
+
+		$db = $this->db;
+		$response = '';
+		$phone = 0;
+		$text = isset($entrypoint['text']) ? $entrypoint['text'] : '';
+		$keyboard = [];
+		$this->reload = 0;
+		$type = 0;
+		$code = 0;
+
+		$user = \Model\Entities\User::search(chat: $this->chat, limit: 1);
+
+		if (!$user) {
+			$user = new \Model\Entities\User(chat: $this->chat);
+			$user->save();
+		}
+		$GLOBALS['user'] = $user;
+
+		if (isset($entrypoint['contact'])) {
+			$phone = $entrypoint['contact']['phone_number'];
+		} else {
+
+			if ($terminal) {
+				$command = json_decode($terminal, true);
+				$code = $command['id'];
+				$type = $command['type'];
+				if ($command['reload']) {
+					$this->reload = $entrypoint['message_id'];
+				}
+				$text = '';
+
+			}
+
+			if ($text == '/start' && $user->service)
+				$user->set(['service' => null]);
+		}
+		if ($user->service) {
+			$this->workout($user, $text, $code, $phone);
+		}
+		else
+			$this->local($type, $user, $text, $code);
 	}
 
 	public function __construct(private String $key, private Int $emergency) {

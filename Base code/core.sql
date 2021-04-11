@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.1.0
+-- version 5.0.2
 -- https://www.phpmyadmin.net/
 --
 -- Хост: mysql
--- Час створення: Бер 30 2021 р., 13:52
--- Версія сервера: 8.0.23
--- Версія PHP: 8.1.0-dev
+-- Час створення: Квт 11 2021 р., 00:45
+-- Версія сервера: 8.0.20
+-- Версія PHP: 7.4.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -30,16 +30,16 @@ SET time_zone = "+00:00";
 CREATE TABLE `Messages` (
   `id` int UNSIGNED NOT NULL,
   `parent` int UNSIGNED DEFAULT NULL,
-  `type` int UNSIGNED NOT NULL DEFAULT '0' COMMENT '0 - повідомлення, - 1 кнопка, 2 - форма, 3 - поле форми',
+  `type` int UNSIGNED NOT NULL DEFAULT '0' COMMENT '0 - повідомлення, - 1 кнопка, 2 - форма, 3 - поле форми, 4 - сервіс',
   `guid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `code` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `title` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `text` text NOT NULL,
+  `text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `entrypoint` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `position` int UNSIGNED NOT NULL DEFAULT '0',
   `service` int UNSIGNED DEFAULT NULL,
   `reload` tinyint(1) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Дамп даних таблиці `Messages`
@@ -62,9 +62,13 @@ INSERT INTO `Messages` (`id`, `parent`, `type`, `guid`, `code`, `title`, `text`,
 (14, 1, 1, '063924dc-8a8e-11eb-8926-0242ac130003', 'opportunities', '💎 Можливості', 'В університеті ти можеш не лише вчитися, а й бути соціально активним. Дізнайся, як саме розвинути свої softskills і не тільки', '/opportunities', 0, NULL, 1),
 (15, 14, 1, '42b1a807-8a8f-11eb-8926-0242ac130003', 'development', '⚙️ Розробникам', 'Єдина інформаційна система(ЄІС) Одеської політехніки діє за принципом відкритості та децентралізації.\r\nБудь який ідентифікований стейкґолдер може здійснити підключення за допомогою SDK\r\n\r\nДля взаємодії із ЄІС необхідно притримуватись простих правил:\r\n\r\n🔑 Пройти ідентифікацію\r\n🔑 Не зберігати інформацію з інших реєстрів\r\n🔑 За вимогою оператора ЄІС видалити дані користувача\r\n🔑 Прозоро використовувати дані\r\n🔑 Використовувати українську мову інтерфейсу', '/fordev', 0, NULL, 1),
 (16, 15, 2, '8311dbb3-8c1a-11eb-99df-0242ac130002', 'connection', 'Запит на підключення', '', NULL, 0, 1, 0),
-(17, 16, 3, 'a433490f-8d0b-11eb-9ad4-0242ac130002', 's-title', 'Назва сервісу', 'Введіть назву сервісу, який будете писати. Обмеження 30 символів', NULL, 0, NULL, 0),
+(17, 16, 3, 'a433490f-8d0b-11eb-9ad4-0242ac130002', 's-title', 'Назва сервісу', 'Введіть назву сервісу, який будете писати. Обмеження 40 символів', NULL, 0, NULL, 0),
 (18, 16, 3, 'da726ece-8e37-11eb-a399-0242ac130004', 's-description', 'Опис сервісу', 'Опишіть, який сервіс будете надавати. Мінімальна кількість - 3 речення', NULL, 1, NULL, 0),
-(19, 16, 3, '30075115-8ea3-11eb-a399-0242ac130004', 's-webhook', 'Webhook', 'Використовуйте це поле для налаштування url адрес webhook.\r\nПри настанні подій, на які підписаний сервіс, на цю адресу надійде опис подій.\r\nВважається, що всі системи працюють на протоколі https, тому починати треба з домену. Обмеження 64 символи.\r\nНаприклад, domain.com/core/webhook', NULL, 2, NULL, 0);
+(19, 16, 3, '30075115-8ea3-11eb-a399-0242ac130004', 's-webhook', 'Webhook', 'Використовуйте це поле для налаштування url адрес webhook.\r\nПри настанні подій, на які підписаний сервіс, на цю адресу надійде опис подій.\r\nВважається, що всі системи працюють на протоколі https, тому починати треба з домену. Обмеження 64 символи.\r\nНаприклад, domain.com/core/webhook', NULL, 2, NULL, 0),
+(20, 1, 1, '6dc694f8-931a-11eb-8133-0242ac120007', 'study', '🧑‍🎓 Моє навчання', 'Не витрачайте час на прогулянки під деканатом, нехай дані бігають за Вас', NULL, 0, NULL, 1),
+(21, 20, 4, '69286f33-9327-11eb-8133-0242ac120007', 'routine', 'Розклад', 'Дозволяє переглядати розклад в залежності від типу акаунту - студента або викладача', NULL, 0, 17, 1),
+(22, 20, 4, '7acfb4bf-960d-11eb-8133-0242ac120007', 'debug', 'Технічні дані', '', NULL, 0, 2, 1),
+(23, 20, 4, 'a3fb38d5-970a-11eb-8133-0242ac120007', 'stats', 'Оцінки', 'Отримання оцінок', NULL, 0, 38, 1);
 
 --
 -- Тригери `Messages`
@@ -82,24 +86,25 @@ DELIMITER ;
 
 CREATE TABLE `Services` (
   `id` int UNSIGNED NOT NULL,
-  `title` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `description` text,
-  `module` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `title` varchar(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
+  `code` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `status` int NOT NULL DEFAULT '0',
   `webhook` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `office` varchar(20) DEFAULT NULL,
+  `office` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `user` int UNSIGNED DEFAULT NULL,
   `token` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `signature` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Дамп даних таблиці `Services`
 --
 
-INSERT INTO `Services` (`id`, `title`, `description`, `module`, `status`, `webhook`, `updated`, `office`, `user`, `token`, `signature`) VALUES
-(1, 'Інтеграція з ЄІС', 'Керує доступом зовнішніх сервісів до єдиної інформаційної системи', '0', 0, NULL, '2021-03-23 21:04:21', 'ПНІТ', NULL, NULL, NULL);
+INSERT INTO `Services` (`id`, `title`, `description`, `code`, `status`, `webhook`, `updated`, `office`, `user`, `token`, `signature`) VALUES
+(1, 'Інтеграція з ЄІС', 'Керує доступом зовнішніх сервісів до єдиної інформаційної системи', NULL, 0, NULL, '2021-03-23 21:04:21', 'ПНІТ', NULL, NULL, NULL),
+(2, 'Проксі', 'Точка входу до боту', 'proxy', 0, 'api.pnit.od.ua', '2021-03-27 03:44:06', NULL, 1, 'm5MrP2rTkLsmja1qutI3OImBlhRuj210', '5DWuFK9qxwmut0tOOIn4ZGhFMcvKDzre');
 
 -- --------------------------------------------------------
 
@@ -111,18 +116,26 @@ CREATE TABLE `Users` (
   `id` int UNSIGNED NOT NULL,
   `chat` int NOT NULL,
   `person` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Тимчасовий стовпчик для розробки',
-  `guid` varchar(36) DEFAULT NULL,
+  `guid` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `service` int UNSIGNED DEFAULT NULL,
   `message` int UNSIGNED DEFAULT NULL,
   `input` json DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Дамп даних таблиці `Users`
 --
 
 INSERT INTO `Users` (`id`, `chat`, `person`, `guid`, `service`, `message`, `input`) VALUES
-(1, 9111, 'Some user', NULL, NULL, NULL, NULL);
+(1, 911, 'Root user', NULL, 2, NULL, NULL);
+
+--
+-- Тригери `Workers`
+--
+DELIMITER $$
+CREATE TRIGGER `GUIDCreator` BEFORE INSERT ON `Workers` FOR EACH ROW SET NEW.guid = UUID()
+$$
+DELIMITER ;
 
 --
 -- Індекси збережених таблиць
@@ -152,6 +165,12 @@ ALTER TABLE `Users`
   ADD KEY `message` (`message`);
 
 --
+-- Індекси таблиці `Workers`
+--
+ALTER TABLE `Workers`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT для збережених таблиць
 --
 
@@ -159,19 +178,25 @@ ALTER TABLE `Users`
 -- AUTO_INCREMENT для таблиці `Messages`
 --
 ALTER TABLE `Messages`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT для таблиці `Services`
 --
 ALTER TABLE `Services`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT для таблиці `Users`
 --
 ALTER TABLE `Users`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+
+--
+-- AUTO_INCREMENT для таблиці `Workers`
+--
+ALTER TABLE `Workers`
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=177;
 
 --
 -- Обмеження зовнішнього ключа збережених таблиць

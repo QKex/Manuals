@@ -15,7 +15,8 @@ $methods = [
 			[
 				'name' => 'position',
 				'source' => 'p',
-				'pattern' => ''
+				'pattern' => '',
+				'default' => ''
 			],
 			[
 				'name' => 'phone',

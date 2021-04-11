@@ -11,9 +11,9 @@ class Main
 {
 	use \Library\Shared;
 
-	public function tgwebhook(array $data):?array {
-		if ($data['token'] == $this->getVar('TGToken', 'e')) {
-			$input = $data['input'];
+	public function tgwebhook(String $token, String $input):?array {
+		if ($token == $this->getVar('TGToken', 'e')) {
+
 			$input = json_decode( $input, true );
 
 			file_put_contents(ROOT . "media/log.txt", file_get_contents('php://input') . "\n\n", FILE_APPEND);
@@ -39,34 +39,49 @@ class Main
 		return [];
 	}
 
-	public function formsubmitAmbassador(array $data):?array {
+	public function uniwebhook(String $type = '', String $value = '', Int $code = 0):?array {
 		$result = null;
-		$chat = 891022220;
-		$this->TG->alert("Нова заявка в *Цифрові Амбасадори*:\n" . $data['firstname'] . ' '. $data['secondname']. ', '. $data['position'] . "\n*Зв'язок*: " . $data['phone']);
-		$result = [];
+		switch ($type) {
+			case 'message':
+				if ($value == 'вихід') {
+					$result = ['type' => 'context', 'set' => null];
+				} else
+				$result = [
+					'to' => $GLOBALS['uni.user'],
+					'type' => 'message',
+					'value' => "Сервіс `Texнічні дані` отримав повідомлення $value"
+				];
+				break;
+				case 'click':
+					$result = [
+						'to' => $GLOBALS['uni.user'],
+						'type' => 'message',
+						'value' => "Сервіс `Texнічні дані`. Натиснуто кнопку $code",
+						'keyboard' => [
+							'inline' => false,
+							'buttons' => [
+								[['id' => 9, 'title' => 'Надати номер', 'request' => 'contact']]
+							]
+						]
+					];
+					break;
+				case 'contact':
+					$result = [
+						'to' => $GLOBALS['uni.user'],
+						'type' => 'message',
+						'value' => "Сервіс `Texнічні дані`. Отримано номер $value"
+					];
+					break;
+		}
+
 		return $result;
 	}
 
-	public function corewebhook(array $data):?array {
+	public function formsubmitAmbassador(String $firstname, String $secondname, String $phone, String $position = ''):?array {
+		$result = null;
+		$chat = 891022220;
+		$this->TG->alert("Нова заявка в *Цифрові Амбасадори*:\n$firstname $secondname, $position\n*Зв'язок*: $phone");
 		$result = [];
-		$token = isset($data['token']) ? $data['token'] : null;
-		if (!$token)
-			throw new \Exception('UIS Token incorrect', 2);
-		else {
-			$service = \Model\Entities\Service::search(signature: $token, limit: 1);
-			if (!$service)
-				throw new \Exception('UIS Access denied', 3);
-			else {
-				$input = json_decode($data['query'], true);
-				if ($input && isset($input['push'])) {
-					foreach ($input['push'] as $task) {
-						$this->TG->setChat($task['user'])
-								->send('🏳️ *' . $service->title . "*\n" . $task['value']);
-					}
-				}
-			}
-		}
-		$data['token'] = '';
 		return $result;
 	}
 
