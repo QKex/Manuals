@@ -27,7 +27,7 @@ class Uniroad
 			'uniroad' => $this->version,
 			'token' => $this->provider->token,
 			'query' => json_encode([$this->query]),
-			'user' => isset($GLOBALS['user']) ? $GLOBALS['user']->guid : null
+			'user' => isset($GLOBALS['user']) ? $GLOBALS['user']->guid : (isset($GLOBALS['uni.user']) ? $GLOBALS['uni.user'] : null)
 		]);
 		if ($response = json_decode($answer)) {
 
