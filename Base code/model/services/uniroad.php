@@ -12,7 +12,7 @@ class Uniroad
 
 	public Int $state = 0;
 	public Int $version = 1;
-	private \stdClass|Array $data;
+	private Array $data;
 	public Array $structures = [];
 	private Array $query = [];
 	private String $url;
@@ -29,11 +29,11 @@ class Uniroad
 			'query' => json_encode([$this->query]),
 			'user' => isset($GLOBALS['user']) ? $GLOBALS['user']->guid : (isset($GLOBALS['uni.user']) ? $GLOBALS['uni.user'] : null)
 		]);
-		if ($response = json_decode($answer)) {
+		if ($response = json_decode($answer, true)) {
 
-			if ($response->state === 0) {
-				if (property_exists($response, 'data'))
-					$this->data = $response->data;
+			if ($response['state'] === 0) {
+				if (isset($response['data']))
+					$this->data = $response['data'];
 			}
 			else {
 				printme($response);
@@ -57,12 +57,13 @@ class Uniroad
 	public function one($index = 0):mixed {
 		$result = null;
 		$this->run();
-		if (isset($this->data->callback[$index]))
-			$result = (object)[
-				'callback' => [ $this->data->callback[$index] ]
+		if (isset($this->data['callback'][$index]))
+			$result = [
+				'callback' => [ $this->data['callback'][$index] ]
 			];
-		else
+		else {
 			$result = isset($this->data[$index]) ? $this->data[$index] : null;
+		}
 		return $result;
 	}
 
