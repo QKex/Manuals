@@ -12,6 +12,7 @@ trait Shared
 	private function request(String $url, Array $params = []):string {
 		$response = '';
 		$data = http_build_query( $params );
+
 		// Setup stream context
 		$context = stream_context_create( [
 

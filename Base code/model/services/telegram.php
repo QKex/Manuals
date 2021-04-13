@@ -101,7 +101,7 @@ class Telegram
 		$recipient = $sentence->to == $user->guid
 			? $user
 			: \Model\Entities\User::search(guid: $sentence->to, limit: 1);
-
+		$value = property_exists($sentence, 'value') ? $sentence->value : 'text lost';
 		if (property_exists($sentence, 'keyboard')) {
 			if (property_exists($sentence->keyboard, 'inline'))
 				$inline = $sentence->keyboard->inline;
@@ -125,7 +125,7 @@ class Telegram
 			}
 		}
 		if ($recipient)
-			$this->send($sentence->value, chat: $recipient->chat, keyboard: $keyboard, inline: $inline);
+			$this->send($value, chat: $recipient->chat, keyboard: $keyboard, inline: $inline);
 	}
 
 	private function callbackContext(\stdClass $sentence, \Model\Entities\User $user):void {

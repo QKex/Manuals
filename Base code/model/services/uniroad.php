@@ -27,7 +27,7 @@ class Uniroad
 			'uniroad' => $this->version,
 			'token' => $this->provider->token,
 			'query' => json_encode([$this->query]),
-			'user' => isset($GLOBALS['user']) ? $GLOBALS['user']->guid : null
+			'user' => isset($GLOBALS['user']) ? $GLOBALS['user']->guid : (isset($GLOBALS['uni.user']) ? $GLOBALS['uni.user'] : null)
 		]);
 		if ($response = json_decode($answer)) {
 
@@ -61,6 +61,8 @@ class Uniroad
 			$result = (object)[
 				'callback' => [ $this->data->callback[$index] ]
 			];
+		else
+			$result = isset($this->data[$index]) ? $this->data[$index] : null;
 		return $result;
 	}
 
@@ -72,7 +74,7 @@ class Uniroad
 			$this->url = $provider->webhook . "/$method";
 			$this->provider = $provider;
 		} else
-			throw new \Exception("Service {$provider->title} incompatible", 10);
+			throw new \Exception("Service {$provider->title} need setup", 10);
 
 		return $this;
 	}

@@ -33,10 +33,6 @@ class User
 	public function save():self {
 		$db = $this->db;
 		if (!$this->id) {
-			// $this->uniform('accounts', 'users/create', [ [] ]);
-			/* $this->uniform('debug', 'form/submitAmbassador', [ [
-				'firstname' => 'Doctor Who'
-			] ]); */
 			$this->id = $db -> insert([
 				'Users' => [ 'chat' => $this->chat ]
 			])->run(true)->storage['inserted'];
@@ -52,10 +48,9 @@ class User
 		$this->db = $this->getDB();
 		$this->input = $this->input ? json_decode($this->input, true) : [];
 		if (!$guid) {
-			$response = $this->request('account.pnit.od.ua/account/create', ['type'=>'user']);
-			$response = json_decode($response);
-			if (!$response->state) {
-				$this->set(['guid' => $response->data->guid]);
+			$response = $this->uni()->get('accounts', ['type'=>'user'], 'account/create')->one();
+			if (property_exists($response, 'guid')) {
+				$this->set(['guid' => $response->guid]);
 			}
 		}
 	}
