@@ -129,13 +129,6 @@ CREATE TABLE `Users` (
 INSERT INTO `Users` (`id`, `chat`, `person`, `guid`, `service`, `message`, `input`) VALUES
 (1, 911, 'Root user', NULL, 2, NULL, NULL);
 
---
--- Тригери `Workers`
---
-DELIMITER $$
-CREATE TRIGGER `GUIDCreator` BEFORE INSERT ON `Workers` FOR EACH ROW SET NEW.guid = UUID()
-$$
-DELIMITER ;
 
 --
 -- Індекси збережених таблиць
@@ -165,12 +158,6 @@ ALTER TABLE `Users`
   ADD KEY `message` (`message`);
 
 --
--- Індекси таблиці `Workers`
---
-ALTER TABLE `Workers`
-  ADD PRIMARY KEY (`id`);
-
---
 -- AUTO_INCREMENT для збережених таблиць
 --
 
@@ -191,12 +178,6 @@ ALTER TABLE `Services`
 --
 ALTER TABLE `Users`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
-
---
--- AUTO_INCREMENT для таблиці `Workers`
---
-ALTER TABLE `Workers`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=177;
 
 --
 -- Обмеження зовнішнього ключа збережених таблиць
